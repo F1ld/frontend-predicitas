@@ -1,0 +1,77 @@
+T-012 · Verificación de navegador: PASS
+Inicio: 2026-10-18T10:20:35.824Z
+Fin: 2026-10-18T10:20:48.919Z
+Backend: {"disponible":false,"error":"fetch failed","conclusion":"Backend no disponible. Se aplica fallback fetch simulado autorizado por tareas/T-012-base-frontend.md; no se comprueba persistencia real."}
+Modalidad: API simulada con page.route; sin acceso a datos compartidos
+Viewports: 360, 768, 1024, 1440 px × 900 px
+Comprobaciones aprobadas: 68
+Capturas: 24
+PASS login: estructura y composición 360px: {"viewport":360,"documento":360,"h1":1,"main":1,"navegacion":0,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2501383508577755,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Login por teclado 360px: "Tab correo → contraseña → Ingresar; Enter → bandeja; token solo en sessionStorage."
+PASS Menú activo bandeja 360px: ["Citas"]
+PASS bandeja: estructura y composición 360px: {"viewport":360,"documento":360,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250295159386068,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":326,"contenido":823}],"contencion":null}
+PASS Saltar al contenido y foco visible 360px: {"top":12,"outline":"solid"}
+PASS Menú activo detalle 360px: ["Citas"]
+PASS detalle: estructura y composición 360px: {"viewport":360,"documento":360,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250295159386068,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Detalle, diálogo y cambio por teclado 360px: {"escapeSinMutacion":true,"ordenFoco":"motivo → Cancelar → Confirmar cambio","post":{"estado_nuevo":"CONFIRMADA","motivo":"Confirmación sintética de verificación T-012"},"historial":true}
+PASS Menú activo importar 360px: ["Importar CSV"]
+PASS importar: estructura y composición 360px: {"viewport":360,"documento":360,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250295159386068,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":{"contenido":{"x":37,"y":546.40625,"width":286,"height":222,"right":323,"bottom":768.40625},"tarjeta":{"x":16,"y":432.21875,"width":328,"height":454.1875,"right":344,"bottom":886.40625},"padding":20}}
+PASS importar-resultado: estructura y composición 360px: {"viewport":360,"documento":360,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250295159386068,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":286,"contenido":392}],"contencion":{"contenido":{"x":37,"y":546.40625,"width":286,"height":222,"right":323,"bottom":768.40625},"tarjeta":{"x":16,"y":432.21875,"width":328,"height":454.1875,"right":344,"bottom":886.40625},"padding":20}}
+PASS Importación y rechazo 360px: {"recibidas":2,"aceptadas":1,"rechazadas":1,"multipart":true,"archivo":"citas-sinteticas-t012.csv"}
+PASS Alias /importar 360px: "Redirige a /citas/importar."
+PASS Movimiento reducido 360px: {"preferencia":true,"transicion":"0s"}
+PASS Permisos TECNICO_IA 360px: "Consulta bandeja/detalle; importación sin menú ni acceso directo y sin botones de cambio."
+PASS SESION_INVALIDA 360px: "401 borra token, avisa al usuario y vuelve a /login."
+PASS Bandeja cargando (navegador): "Estado visible durante respuesta diferida y reemplazado por datos."
+PASS Bandeja vacía (navegador): "Mensaje visible con respuesta items: []."
+PASS Bandeja error y reintento (navegador): "Error contractual 500 visible y recuperación posterior."
+PASS login: estructura y composición 768px: {"viewport":768,"documento":768,"h1":1,"main":1,"navegacion":0,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250474383301707,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Login por teclado 768px: "Tab correo → contraseña → Ingresar; Enter → bandeja; token solo en sessionStorage."
+PASS Menú activo bandeja 768px: ["Citas"]
+PASS bandeja: estructura y composición 768px: {"viewport":768,"documento":768,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":718,"contenido":823}],"contencion":null}
+PASS Saltar al contenido y foco visible 768px: {"top":12,"outline":"solid"}
+PASS Menú activo detalle 768px: ["Citas"]
+PASS detalle: estructura y composición 768px: {"viewport":768,"documento":768,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Detalle, diálogo y cambio por teclado 768px: {"escapeSinMutacion":true,"ordenFoco":"motivo → Cancelar → Confirmar cambio","post":{"estado_nuevo":"CONFIRMADA","motivo":"Confirmación sintética de verificación T-012"},"historial":true}
+PASS Menú activo importar 768px: ["Importar CSV"]
+PASS importar: estructura y composición 768px: {"viewport":768,"documento":768,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":{"contenido":{"x":51,"y":443.4375,"width":382.953125,"height":230,"right":433.953125,"bottom":673.4375},"tarjeta":{"x":24,"y":342.75,"width":436.953125,"height":454.6875,"right":460.953125,"bottom":797.4375},"padding":26}}
+PASS importar-resultado: estructura y composición 768px: {"viewport":768,"documento":768,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":666,"contenido":666}],"contencion":{"contenido":{"x":51,"y":443.4375,"width":382.953125,"height":230,"right":433.953125,"bottom":673.4375},"tarjeta":{"x":24,"y":342.75,"width":436.953125,"height":454.6875,"right":460.953125,"bottom":797.4375},"padding":26}}
+PASS Importación y rechazo 768px: {"recibidas":2,"aceptadas":1,"rechazadas":1,"multipart":true,"archivo":"citas-sinteticas-t012.csv"}
+PASS Alias /importar 768px: "Redirige a /citas/importar."
+PASS Movimiento reducido 768px: {"preferencia":true,"transicion":"0s"}
+PASS Permisos TECNICO_IA 768px: "Consulta bandeja/detalle; importación sin menú ni acceso directo y sin botones de cambio."
+PASS SESION_INVALIDA 768px: "401 borra token, avisa al usuario y vuelve a /login."
+PASS login: estructura y composición 1024px: {"viewport":1024,"documento":1024,"h1":1,"main":1,"navegacion":0,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250474383301707,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Login por teclado 1024px: "Tab correo → contraseña → Ingresar; Enter → bandeja; token solo en sessionStorage."
+PASS Menú activo bandeja 1024px: ["Citas"]
+PASS bandeja: estructura y composición 1024px: {"viewport":1024,"documento":1024,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":974,"contenido":974}],"contencion":null}
+PASS Saltar al contenido y foco visible 1024px: {"top":12,"outline":"solid"}
+PASS Menú activo detalle 1024px: ["Citas"]
+PASS detalle: estructura y composición 1024px: {"viewport":1024,"documento":1024,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Detalle, diálogo y cambio por teclado 1024px: {"escapeSinMutacion":true,"ordenFoco":"motivo → Cancelar → Confirmar cambio","post":{"estado_nuevo":"CONFIRMADA","motivo":"Confirmación sintética de verificación T-012"},"historial":true}
+PASS Menú activo importar 1024px: ["Importar CSV"]
+PASS importar: estructura y composición 1024px: {"viewport":1024,"documento":1024,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":{"contenido":{"x":51,"y":443.4375,"width":544.140625,"height":230,"right":595.140625,"bottom":673.4375},"tarjeta":{"x":24,"y":342.75,"width":598.140625,"height":421.6875,"right":622.140625,"bottom":764.4375},"padding":26}}
+PASS importar-resultado: estructura y composición 1024px: {"viewport":1024,"documento":1024,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":922,"contenido":922}],"contencion":{"contenido":{"x":51,"y":443.4375,"width":544.140625,"height":230,"right":595.140625,"bottom":673.4375},"tarjeta":{"x":24,"y":342.75,"width":598.140625,"height":421.6875,"right":622.140625,"bottom":764.4375},"padding":26}}
+PASS Importación y rechazo 1024px: {"recibidas":2,"aceptadas":1,"rechazadas":1,"multipart":true,"archivo":"citas-sinteticas-t012.csv"}
+PASS Alias /importar 1024px: "Redirige a /citas/importar."
+PASS Movimiento reducido 1024px: {"preferencia":true,"transicion":"0s"}
+PASS Permisos TECNICO_IA 1024px: "Consulta bandeja/detalle; importación sin menú ni acceso directo y sin botones de cambio."
+PASS SESION_INVALIDA 1024px: "401 borra token, avisa al usuario y vuelve a /login."
+PASS login: estructura y composición 1440px: {"viewport":1440,"documento":1440,"h1":1,"main":1,"navegacion":0,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.250474383301707,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Login por teclado 1440px: "Tab correo → contraseña → Ingresar; Enter → bandeja; token solo en sessionStorage."
+PASS Menú activo bandeja 1440px: ["Citas"]
+PASS bandeja: estructura y composición 1440px: {"viewport":1440,"documento":1440,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":1238,"contenido":1238}],"contencion":null}
+PASS Saltar al contenido y foco visible 1440px: {"top":12,"outline":"solid"}
+PASS Menú activo detalle 1440px: ["Citas"]
+PASS detalle: estructura y composición 1440px: {"viewport":1440,"documento":1440,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":null}
+PASS Detalle, diálogo y cambio por teclado 1440px: {"escapeSinMutacion":true,"ordenFoco":"motivo → Cancelar → Confirmar cambio","post":{"estado_nuevo":"CONFIRMADA","motivo":"Confirmación sintética de verificación T-012"},"historial":true}
+PASS Menú activo importar 1440px: ["Importar CSV"]
+PASS importar: estructura y composición 1440px: {"viewport":1440,"documento":1440,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[],"contencion":{"contenido":{"x":127,"y":450.140625,"width":702.8125,"height":230,"right":829.8125,"bottom":680.140625},"tarjeta":{"x":100,"y":349.453125,"width":756.8125,"height":421.6875,"right":856.8125,"bottom":771.140625},"padding":26}}
+PASS importar-resultado: estructura y composición 1440px: {"viewport":1440,"documento":1440,"h1":1,"main":1,"navegacion":1,"solapes":[],"logos":{"natural":4.225352112676056,"declarada":4.25,"renderizado":4.2503192848020435,"alt":"PrediCitas CRP","completo":true},"scroll":[{"ancho":1186,"contenido":1186}],"contencion":{"contenido":{"x":127,"y":450.140625,"width":702.8125,"height":230,"right":829.8125,"bottom":680.140625},"tarjeta":{"x":100,"y":349.453125,"width":756.8125,"height":421.6875,"right":856.8125,"bottom":771.140625},"padding":26}}
+PASS Importación y rechazo 1440px: {"recibidas":2,"aceptadas":1,"rechazadas":1,"multipart":true,"archivo":"citas-sinteticas-t012.csv"}
+PASS Alias /importar 1440px: "Redirige a /citas/importar."
+PASS Movimiento reducido 1440px: {"preferencia":true,"transicion":"0s"}
+PASS Permisos TECNICO_IA 1440px: "Consulta bandeja/detalle; importación sin menú ni acceso directo y sin botones de cambio."
+PASS SESION_INVALIDA 1440px: "401 borra token, avisa al usuario y vuelve a /login."
+PASS Consola y recursos: {"recursos404":0,"fallosRed":0,"excepciones":0,"mensajesEsperados":5,"detalle":"Solo mensajes de red 401/500 de los escenarios de error provocados."}
+Límite: la API está simulada; no se afirma persistencia real del backend.

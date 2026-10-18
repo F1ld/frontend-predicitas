@@ -17,6 +17,8 @@
   h1 { font-size: clamp(1.65rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.035em; line-height: 1.2; }
   h2 { font-size: 1.05rem; font-weight: 650; letter-spacing: -.015em; }
   label { @apply mb-1 block text-sm font-medium text-slate-700; }
+  /* RNF-016: el selector de archivo debe caber dentro de la tarjeta en móvil. */
+  fieldset { min-width: 0; }
   input:not([type="file"]), select, textarea { width: 100%; min-height: 44px; border: 1px solid #bdcece; border-radius: 7px; background: #fff; padding: 10px 12px; color: var(--texto); font-size: .875rem; transition: border-color .15s, box-shadow .15s; }
   input::placeholder, textarea::placeholder { color: #7b8b8d; }
   input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { @apply outline-2 outline-offset-2 outline-teal-600; }
@@ -91,6 +93,8 @@
 .enlace-detalle .icono { width: 15px; height: 15px; }
 .estado-badge { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 5px; padding: 5px 8px; font-size: 11px; font-weight: 600; }
 .estado-punto { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .75; }
+/* RF-056, RN16, RNF-017: el aviso acompaña al riesgo sin significado clínico. */
+.rotulo-simulado { display: block; max-width: 180px; margin-top: 6px; font-size: 11px; line-height: 1.5; color: var(--texto-suave); }
 .estado-vacio { display: flex; align-items: center; flex-direction: column; gap: 11px; padding: 36px 8px; text-align: center; }
 .estado-vacio > .icono { width: 30px; height: 30px; color: #779a99; margin-bottom: 4px; }
 .estado-vacio p { font-weight: 600; color: #3c5a60; }
