@@ -1,6 +1,6 @@
-﻿import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useEffect } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../../nucleo/api/cliente";
 import { useConsulta } from "../../nucleo/api/useConsulta";
 import { useAuth } from "../../nucleo/auth/useAuth";
@@ -33,7 +33,11 @@ function Detalle({ id }: { id: string }) {
   const rutaAnterior = typeof estadoNavegacion === "object" && estadoNavegacion !== null && "volver" in estadoNavegacion ? estadoNavegacion.volver : null;
   const volver = typeof rutaAnterior === "string" && rutaAnterior.startsWith("/citas?") ? rutaAnterior : "/citas";
   const { tieneRol } = useAuth();
+  const [parametrosConsulta] = useSearchParams();
+  const idIntervencionParam = parametrosConsulta.get("id_intervencion");
+  const idIntervencionNum = idIntervencionParam && /^[1-9]\d*$/.test(idIntervencionParam.trim()) ? Number(idIntervencionParam.trim()) : null;
   const { datos: cita, cargando, error, reintentar, actualizar } = useConsulta<CitaDetalleOut>(`/citas/${id}`);
+  const intervencionOrigen = idIntervencionNum !== null && cita?.intervenciones.some((i) => i.id_intervencion === idIntervencionNum) ? idIntervencionNum : null;
   const [destino, setDestino] = useState<EstadoDestino | "">("");
   const [enviando, setEnviando] = useState(false);
   const [registrandoLlegada, setRegistrandoLlegada] = useState(false);
@@ -152,6 +156,7 @@ function Detalle({ id }: { id: string }) {
   return <>
     <Link className="enlace-volver" to={volver}>← Volver a la bandeja</Link>
     <div className="pagina-titulo"><div><p className="sobretitulo">DETALLE Y SEGUIMIENTO</p><h1 className="break-words">Cita {cita.id_cita_externa}</h1><p>{etiqueta(cita.especialidad)} <span aria-hidden="true">·</span> {formatearFechaHora(cita.fecha_hora_cita)}</p></div><EstadoBadge estado={cita.estado_actual} /></div>
+    {intervencionOrigen !== null && <Mensaje tipo="info">Vienes de la intervención #{intervencionOrigen}. Para registrar la confirmación, usa &quot;Cambiar estado&quot; → Confirmada.</Mensaje>}
     {errorCambio && <Mensaje>{errorCambio}</Mensaje>}{exito && <Mensaje tipo="exito">{exito}</Mensaje>}
     <div className="grid items-start gap-6 lg:grid-cols-3">
       <section className="tarjeta lg:col-span-2" aria-labelledby="titulo-datos"><div className="seccion-cabecera"><h2 id="titulo-datos"><Icono nombre="calendario" />Datos de la cita</h2><p>Información registrada en el piloto.</p></div>
@@ -191,7 +196,7 @@ function Detalle({ id }: { id: string }) {
       <form onSubmit={confirmar} className="space-y-4"><h2 id="titulo-cambio">¿Cambiar a {etiqueta(destino)}?</h2><p id="ayuda-cambio" className="text-sm text-slate-600">Cita {cita.id_cita_externa}. Los estados finales no admiten nuevos cambios.</p>
         {destino === "REPROGRAMADA" && <div><label htmlFor="nueva-fecha-cita">Nueva fecha y hora de cita (Lima)</label><input id="nueva-fecha-cita" name="nueva_fecha_hora_cita" type="datetime-local" required disabled={enviando} aria-describedby="ayuda-reprogramacion" /><p id="ayuda-reprogramacion" className="mt-1 text-xs text-slate-600">Registra la fecha acordada en el sistema externo. Los domingos están fuera del piloto.</p></div>}
         {destino === "CANCELADA" && citaFutura && <label className="citas-check-control"><input type="checkbox" name="liberar_cupo" disabled={enviando} />Liberar cupo para reasignación</label>}
-        {destino === "CONFIRMADA" && <div><label htmlFor="intervencion-confirmacion">Intervención que obtuvo la confirmación (opcional)</label><select id="intervencion-confirmacion" name="id_intervencion" disabled={enviando}><option value="">Sin intervención asociada</option>{cita.intervenciones.map((intervencion) => <option key={intervencion.id_intervencion} value={intervencion.id_intervencion}>#{intervencion.id_intervencion} · {intervencion.canal_contacto} · {intervencion.respuesta_paciente || "Sin respuesta"}</option>)}</select></div>}
+        {destino === "CONFIRMADA" && <div><label htmlFor="intervencion-confirmacion">Intervención que obtuvo la confirmación (opcional)</label><select id="intervencion-confirmacion" name="id_intervencion" disabled={enviando} defaultValue={intervencionOrigen ?? ""}><option value="">Sin intervención asociada</option>{cita.intervenciones.map((intervencion) => <option key={intervencion.id_intervencion} value={intervencion.id_intervencion}>#{intervencion.id_intervencion} · {intervencion.canal_contacto} · {intervencion.respuesta_paciente || "Sin respuesta"}</option>)}</select></div>}
         <div><label htmlFor="motivo">Motivo (opcional)</label><textarea id="motivo" name="motivo" maxLength={255} rows={3} disabled={enviando} /></div>
         <div className="flex flex-wrap justify-end gap-2"><button type="button" className="boton-secundario" disabled={enviando} onClick={() => dialogo.current?.close()}>Cancelar</button><button className="boton" disabled={enviando} type="submit">{enviando ? "Guardando…" : "Confirmar cambio"}</button></div>
       </form>

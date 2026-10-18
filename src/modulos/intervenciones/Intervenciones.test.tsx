@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContextoAuth } from "../../nucleo/auth/contexto";
 import { ContextoSesion } from "../../nucleo/auth/contexto";
 import Intervenciones from "./Intervenciones";
+import menu from "./menu";
+import rutas from "./rutas";
 import type { ElegibleOut, IntervencionOut, PlantillaOut } from "./tipos";
 
 const mockUsuario = {
@@ -311,4 +313,25 @@ describe("M05-V01: vista principal de intervenciones", () => {
     await persona.click(screen.getByRole("button", { name: "Limpiar" }));
     expect(screen.getByLabelText("URL actual").textContent).toBe("/intervenciones");
   });
+
+  it("aplica filtros de fecha válidos al enviar el formulario", async () => {
+    const persona = userEvent.setup();
+    montar();
+    await screen.findByText("CIT-000101");
+    fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-10-01" } });
+    fireEvent.change(screen.getByLabelText("Hasta"), { target: { value: "2026-10-10" } });
+    await persona.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+    expect(screen.getByLabelText("URL actual")).toHaveTextContent("desde=2026-10-01");
+    expect(screen.getByLabelText("URL actual")).toHaveTextContent("hasta=2026-10-10");
+  });
+
+  it("publica las rutas del módulo y los accesos del menú según el contrato", () => {
+    expect(rutas.map((r) => r.ruta)).toEqual(["/intervenciones", "/intervenciones/:id", "/reportes/intervenciones"]);
+    expect(rutas[0].roles).toContain("TECNICO_IA");
+    expect(rutas[2].roles).not.toContain("TECNICO_IA");
+    expect(menu.map((m) => m.ruta)).toEqual(["/intervenciones", "/reportes/intervenciones"]);
+    expect(menu[0].roles).toContain("TECNICO_IA");
+    expect(menu[1].roles).not.toContain("TECNICO_IA");
+  });
 });
+

@@ -1,7 +1,41 @@
-import type { Especialidad, EstadoCita, NivelRiesgo, RiesgoResumen } from "../citas/tipos";
-export type { CupoOut } from "../citas/tipos";
+// RF-057 a RF-068, REP-02: enums y tipos exactos de contratos y diccionario-de-datos.json.
+export type Especialidad = "CARDIOLOGIA" | "TRAUMATOLOGIA" | "PEDIATRIA";
+export type EstadoCita = "RECIBIDA" | "CONFIRMADA" | "REPROGRAMADA" | "CANCELADA" | "LIBERADA" | "ATENDIDA" | "NO_SHOW";
+export type NivelRiesgo = "BAJO" | "MEDIO" | "ALTO";
+export type FranjaHoraria = "MANANA" | "TARDE";
+export type EstadoCupo = "DISPONIBLE" | "EN_OFERTA" | "REASIGNADO" | "EXPIRADO";
+export type OrigenLiberacion = "INTERVENCION_VOLUNTARIA" | "CANCELACION_EXTERNA";
 
-// RF-057 a RF-068, REP-02: formas y enums exactos de contratos/modulo-05.json.
+export interface RiesgoResumen {
+  id_prediccion: number;
+  probabilidad_no_show: number;
+  nivel_riesgo: NivelRiesgo;
+  version_modelo: string;
+  fecha_hora_inferencia: string;
+  resultado_simulado: boolean;
+}
+
+export interface OfertaOut {
+  id_candidato: number;
+  paciente_anon_id: string;
+  id_operador: number;
+  fecha_hora_oferta: string;
+}
+
+export interface CupoOut {
+  id_cupo_liberado: number;
+  id_cita_origen: number;
+  id_cita_externa_origen: string;
+  especialidad: Especialidad;
+  medico: string;
+  fecha_hora_cupo: string;
+  franja_horaria: FranjaHoraria;
+  estado_cupo: EstadoCupo;
+  origen_liberacion: OrigenLiberacion;
+  liberado_en: string;
+  oferta_vigente: OfertaOut | null;
+}
+
 export type CanalContacto = "WHATSAPP" | "SMS" | "LLAMADA_TELEFONICA";
 export type EstadoIntervencion = "PENDIENTE" | "ENVIADA" | "ENTREGADA" | "RESPONDIDA" | "FALLIDA";
 export type RespuestaPaciente = "CONFIRMA" | "SOLICITA_LIBERACION" | "SOLICITA_REPROG" | "SIN_RESPUESTA";

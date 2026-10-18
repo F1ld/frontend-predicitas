@@ -173,6 +173,14 @@ describe("Reporte de intervenciones M05-V04", () => {
     expect(screen.getByRole("button", { name: "Exportar Excel" })).toBeEnabled();
   });
 
+  it("muestra error genérico cuando falla la descarga sin respuesta estructurada", async () => {
+    fetchSimulado.mockImplementation((entrada) => new URL(String(entrada)).searchParams.has("formato") ? Promise.reject(new Error("Fallo de red")) : Promise.resolve(respuesta(reporte)));
+    montar();
+    await screen.findByText("CIT-SIM-007");
+    await userEvent.click(screen.getByRole("button", { name: "Exportar CSV" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo conectar con el servidor. Comprueba que el backend está encendido.");
+  });
+
   it("invoca la impresión del navegador para guardar PDF", async () => {
     const imprimir = vi.spyOn(window, "print").mockImplementation(() => undefined);
     montar();

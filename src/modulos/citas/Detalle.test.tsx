@@ -317,4 +317,57 @@ describe("Inferencia local al detalle (RF-052, RF-056, RF-098, RF-099, RF-103, R
     if (visible) expect(screen.getByRole("link", { name: "Crear intervención" })).toBeInTheDocument();
     else expect(screen.queryByRole("link", { name: "Crear intervención" })).not.toBeInTheDocument();
   });
+
+  describe("T-053 Observación 1: preselección de intervención desde ?id_intervencion=", () => {
+    function montarConQuery(query = "") {
+      return render(
+        <MemoryRouter initialEntries={[`/citas/324${query}`]}>
+          <Routes>
+            <Route path="/citas/:id" element={<Detalle />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+    }
+
+    it("a) con ?id_intervencion= de una intervención de la cita: se ve el aviso y, al abrir «Cambiar estado» y elegir Confirmada, el selector tiene preseleccionado ese id", async () => {
+      fetchSimulado.mockResolvedValueOnce(respuesta({ ...detalle, intervenciones: [intervencion] }));
+      montarConQuery("?id_intervencion=17");
+      expect(await screen.findByText('Vienes de la intervención #17. Para registrar la confirmación, usa "Cambiar estado" → Confirmada.')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Marcar como Confirmada" }));
+      const selector = screen.getByLabelText("Intervención que obtuvo la confirmación (opcional)") as HTMLSelectElement;
+      expect(selector.value).toBe("17");
+    });
+
+    it("b) con un id que no pertenece a la cita: no hay aviso y el selector queda en «Sin intervención asociada»", async () => {
+      fetchSimulado.mockResolvedValueOnce(respuesta({ ...detalle, intervenciones: [intervencion] }));
+      montarConQuery("?id_intervencion=999");
+      await screen.findByText(detalle.paciente_anon_id);
+      expect(screen.queryByText(/Vienes de la intervención/)).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Marcar como Confirmada" }));
+      const selector = screen.getByLabelText("Intervención que obtuvo la confirmación (opcional)") as HTMLSelectElement;
+      expect(selector.value).toBe("");
+    });
+
+    it("c) con un valor no numérico (?id_intervencion=abc): no hay aviso", async () => {
+      fetchSimulado.mockResolvedValueOnce(respuesta({ ...detalle, intervenciones: [intervencion] }));
+      montarConQuery("?id_intervencion=abc");
+      await screen.findByText(detalle.paciente_anon_id);
+      expect(screen.queryByText(/Vienes de la intervención/)).not.toBeInTheDocument();
+    });
+
+    it("d) en los tres casos, fetch solo se llama para leer el detalle (ninguna escritura)", async () => {
+      for (const query of ["?id_intervencion=17", "?id_intervencion=999", "?id_intervencion=abc"]) {
+        fetchSimulado.mockReset();
+        fetchSimulado.mockResolvedValueOnce(respuesta({ ...detalle, intervenciones: [intervencion] }));
+        const { unmount } = montarConQuery(query);
+        await screen.findByText(detalle.paciente_anon_id);
+        expect(fetchSimulado).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchSimulado.mock.calls[0];
+        expect(String(url)).toContain("/citas/324");
+        expect(init?.method ?? "GET").toBe("GET");
+        unmount();
+      }
+    });
+  });
 });
+
