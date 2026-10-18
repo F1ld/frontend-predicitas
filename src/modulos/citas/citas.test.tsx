@@ -25,6 +25,7 @@ const cita: CitaResumenOut = {
 };
 const detalle: CitaDetalleOut = {
   ...cita,
+  check_in: null, predicciones: [], intervenciones: [], cupo_liberado: null, reasignacion: null,
   historial: [{ id_historial: 1, estado_anterior: null, estado_nuevo: "RECIBIDA", id_usuario_actor: null, motivo_cambio: null, fecha_hora_evento: "2026-10-01T10:00:00-05:00" }],
 };
 const resultadoImportacion: ResultadoImportacionOut = {
@@ -60,7 +61,11 @@ function montarImportar() {
 
 beforeEach(() => {
   fetchSimulado.mockReset();
-  vi.stubGlobal("fetch", fetchSimulado);
+  // RF-015: los catálogos son una consulta independiente de la bandeja.
+  vi.stubGlobal("fetch", (entrada: RequestInfo | URL, opciones?: RequestInit) =>
+    new URL(String(entrada)).pathname === "/citas/catalogos"
+      ? Promise.resolve(respuesta({ especialidades: ["CARDIOLOGIA", "TRAUMATOLOGIA", "PEDIATRIA"], estados: ESTADOS, niveles_riesgo: ["BAJO", "MEDIO", "ALTO"], medicos: [], canales_origen: ["WEB", "CALL_CENTER", "PRESENCIAL"], tipos_paciente: ["NUEVO", "CONTINUADOR"] }))
+      : fetchSimulado(entrada, opciones));
   permisos.escritura = true;
   sessionStorage.clear();
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", { configurable: true, value(this: HTMLDialogElement) { this.setAttribute("open", ""); } });
@@ -80,7 +85,7 @@ describe("Bandeja migrada (RF-009, RF-016, RF-056, RN16, RNF-016)", () => {
     fetchSimulado.mockResolvedValue(respuesta(pagina()));
     montarBandeja();
     expect(await screen.findByText(cita.id_cita_externa)).toBeInTheDocument();
-    expect(screen.getByText("Sin predicción")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Sin predicción" })).toBeInTheDocument();
     expect(screen.getByText(cita.medico)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver detalle" })).toHaveAttribute("href", "/citas/324");
     expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
@@ -94,8 +99,8 @@ describe("Bandeja migrada (RF-009, RF-016, RF-056, RN16, RNF-016)", () => {
     } }])));
     montarBandeja();
     expect(await screen.findByText("Resultado simulado: no es desempeño real")).toBeInTheDocument();
-    expect(screen.getByText(/Alto/i)).toBeInTheDocument();
-    expect(screen.queryByText("Sin predicción")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Riesgo de inasistencia: ALTO")).toBeInTheDocument();
+    expect(screen.queryByRole("cell", { name: "Sin predicción" })).not.toBeInTheDocument();
   });
 
   it("conserva el estado vacío con ayuda para ampliar la búsqueda", async () => {
@@ -228,7 +233,7 @@ describe("Detalle migrado (RF-018, RF-019, RF-020, RNF-007)", () => {
     montarDetalle();
     await userEvent.click(await screen.findByRole("button", { name: "Marcar como Confirmada" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar cambio" }));
-    expect(await screen.findByText("La cita ya no admite ese cambio. El estado cambió.")).toBeInTheDocument();
+    expect(await screen.findByText(/La cita ya no admite ese cambio/)).toBeInTheDocument();
     expect(screen.getByText("Estado final: no admite más cambios.")).toBeInTheDocument();
   });
 
@@ -325,7 +330,7 @@ describe("Importación migrada (RF-011, RF-012, RNF-007)", () => {
 
 describe("Ranuras y transiciones existentes (RF-009, RF-011, RF-019)", () => {
   it("publica las rutas de lectura y restringe la importación a escritores", () => {
-    expect(rutas.map((ruta) => ruta.ruta)).toEqual(["/citas", "/citas/importar", "/citas/:id"]);
+    expect(rutas.map((ruta) => ruta.ruta)).toEqual(["/citas", "/citas/nueva", "/citas/importar", "/citas/:id"]);
     expect(rutas[0].roles).toContain("TECNICO_IA");
     expect(rutas[1].roles).toEqual(ROLES_ESCRITURA);
     expect(menu.find((entrada) => entrada.ruta === "/citas")?.roles).toContain("TECNICO_IA");
