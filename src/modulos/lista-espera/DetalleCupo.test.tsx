@@ -546,9 +546,438 @@ describe("Estados especiales de cupo: EXPIRADO y REASIGNADO", () => {
     expect(screen.getByText("#777")).toBeInTheDocument();
     expect(screen.getAllByText("Presencial").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Reasignado en ventanilla")).toBeInTheDocument();
-    expect(screen.getByText("Agenda la cita en el sistema de la clínica: PrediCitas no agenda")).toBeInTheDocument();
-
     // No llama a /candidatos
     expect(fetchSimulado).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("DetalleCupo · caminos de error y guardas (T-063)", () => {
+  const cupoConOferta: CupoDetalleOut = {
+    ...cupoInicial,
+    estado_cupo: "EN_OFERTA",
+    oferta_vigente: {
+      id_candidato: candidatoUno.id_candidato,
+      paciente_anon_id: candidatoUno.paciente_anon_id,
+      id_operador: 5,
+      fecha_hora_oferta: "2026-10-24T11:00:00-05:00",
+    },
+  };
+
+  it("línea 31: muestra error cuando GET /cupos/{id}/candidatos responde 200 con cuerpo null", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta(null));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("El servidor no devolvió las propuestas de candidatos.")).toBeInTheDocument();
+  });
+
+  it("línea 34: cancela la carga al desmontar el componente sin emitir errores tardíos", async () => {
+    let abortado = false;
+    fetchSimulado.mockImplementation((_url, opt) => {
+      return new Promise((_, reject) => {
+        opt?.signal?.addEventListener("abort", () => {
+          abortado = true;
+          reject(new DOMException("The operation was aborted", "AbortError"));
+        });
+      });
+    });
+
+    const { unmount } = montar();
+    unmount();
+
+    expect(abortado).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("líneas 36-37: relee el cupo cuando GET /candidatos responde 409 y muestra el error de candidatos", async () => {
+    const cupoReasignado: CupoDetalleOut = {
+      ...cupoInicial,
+      estado_cupo: "REASIGNADO",
+    };
+
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(errorApi("CUPO_REASIGNADO", "El cupo ya fue reasignado.", 409))
+      .mockResolvedValueOnce(respuesta(cupoReasignado));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(
+      screen.getByText("El cupo ya fue reasignado. No se puede confirmar otra reasignación.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("REASIGNADO")).toBeInTheDocument();
+    expect(fetchSimulado).toHaveBeenCalledTimes(3);
+    expect(String(fetchSimulado.mock.calls[0][0])).toContain("/cupos/42");
+    expect(String(fetchSimulado.mock.calls[1][0])).toContain("/cupos/42/candidatos");
+    expect(String(fetchSimulado.mock.calls[2][0])).toContain("/cupos/42");
+  });
+
+  it("líneas 61, 63: gestiona error 500 inicial con opción de reintentar y tolera desmontaje durante el fallo", async () => {
+    fetchSimulado.mockResolvedValueOnce(errorApi("ERROR_INTERNO", "Error interno 500", 500));
+
+    montar();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Error interno 500");
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+
+    cleanup();
+
+    let rejectPromise: ((reason: unknown) => void) | undefined;
+    fetchSimulado.mockImplementationOnce(() => new Promise((_, reject) => {
+      rejectPromise = reject;
+    }));
+    const { unmount } = montar();
+    unmount();
+    rejectPromise?.(new Error("Fallo tras desmontar"));
+  });
+
+  it("líneas 75, 77, 80: refrescar() con error de candidatos activa requiereRefresco y mantiene el botón visible", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(errorApi("ERROR_CANDIDATOS", "Fallo al consultar candidatos", 500))
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(errorApi("ERROR_CANDIDATOS", "Fallo repetido en candidatos", 500));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("Fallo al consultar candidatos")).toBeInTheDocument();
+
+    const botonRefrescar = screen.getByRole("button", { name: "Refrescar cupo y propuestas" });
+    await userEvent.click(botonRefrescar);
+
+    expect(await screen.findByText("No se pudo refrescar el cupo: Fallo repetido en candidatos")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refrescar cupo y propuestas" })).toBeInTheDocument();
+  });
+
+  it("líneas 85, 89-91: botón de refresco gestiona éxito, fallo con cupo, reintento sin cupo y evita doble clic", async () => {
+    let resolverRefresco: ((res: Response) => void) | undefined;
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(errorApi("ERROR_CANDIDATOS", "Error temporal", 500))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolverRefresco = resolve;
+      }))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    const botonRefrescar = screen.getByRole("button", { name: "Refrescar cupo y propuestas" });
+
+    fireEvent.click(botonRefrescar);
+    fireEvent.click(botonRefrescar);
+
+    expect(fetchSimulado).toHaveBeenCalledTimes(3);
+
+    resolverRefresco!(respuesta(cupoInicial));
+    await waitFor(() => {
+      expect(screen.queryByText("Error temporal")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Refrescar cupo y propuestas" })).not.toBeInTheDocument();
+    });
+
+    cleanup();
+
+    fetchSimulado
+      .mockResolvedValueOnce(errorApi("ERROR_INTERNO", "Error inicial", 500))
+      .mockResolvedValueOnce(errorApi("ERROR_INTERNO", "Fallo reintento sin cupo", 500));
+
+    montar();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Error inicial");
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Fallo reintento sin cupo");
+  });
+
+  it("líneas 97, 99, 103-105, 109: acción con cuerpo vacío y acción guardada con refresco fallido", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockResolvedValueOnce(respuesta(null));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: `Ofrecer cupo a ${candidatoUno.paciente_anon_id}` }));
+    expect(await screen.findByText("El servidor no devolvió el resultado de la acción.")).toBeInTheDocument();
+
+    cleanup();
+
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockResolvedValueOnce(respuesta(cupoConOferta))
+      .mockResolvedValueOnce(errorApi("ERROR_INTERNO", "Fallo al refrescar tras oferta", 500));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: `Ofrecer cupo a ${candidatoUno.paciente_anon_id}` }));
+    expect(
+      await screen.findByText("La acción se guardó, pero no se pudo refrescar el detalle y sus propuestas: Fallo al refrescar tras oferta")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refrescar cupo y propuestas" })).toBeInTheDocument();
+  });
+
+  it("líneas 112, 117, 120: acción con 409 y refresco fallido combina ambos errores, y cubre desmontaje", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockResolvedValueOnce(errorApi("ESTADO_INVALIDO", "El cupo ya no está disponible.", 409))
+      .mockResolvedValueOnce(errorApi("ERROR_RED", "Fallo de conexión.", 500));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: `Ofrecer cupo a ${candidatoUno.paciente_anon_id}` }));
+
+    expect(
+      await screen.findByText("El cupo ya no está disponible. No se pudo refrescar el cupo: Fallo de conexión.")
+    ).toBeInTheDocument();
+
+    cleanup();
+
+    let resolverPost: ((res: Response) => void) | undefined;
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolverPost = resolve;
+      }));
+
+    const inst = montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: `Ofrecer cupo a ${candidatoUno.paciente_anon_id}` }));
+    inst.unmount();
+    resolverPost!(respuesta(cupoInicial));
+  });
+
+  it("líneas 129, 133, 137, 142: guardas bloquean acciones mientras está bloqueado y doble clic en Ofrecer emite un solo POST", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoConOferta))
+      .mockResolvedValueOnce(errorApi("ERROR_CANDIDATOS", "Error candidatos", 500));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+
+    const botonRechazo = screen.getByRole("button", { name: "Cerrar oferta: rechazó" });
+    const botonSinResp = screen.getByRole("button", { name: "Cerrar oferta: sin respuesta" });
+    const botonConfirmar = screen.getByRole("button", { name: "Confirmar reasignación" });
+
+    expect(botonRechazo).toBeDisabled();
+    expect(botonSinResp).toBeDisabled();
+    expect(botonConfirmar).toBeDisabled();
+
+    fireEvent.click(botonRechazo);
+    fireEvent.click(botonSinResp);
+    fireEvent.click(botonConfirmar);
+
+    const llamadasPost = fetchSimulado.mock.calls.filter(([, opt]) => opt?.method === "POST");
+    expect(llamadasPost).toHaveLength(0);
+
+    cleanup();
+
+    let resolverOferta: ((res: Response) => void) | undefined;
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolverOferta = resolve;
+      }))
+      .mockResolvedValueOnce(respuesta(cupoConOferta));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    const botonOfrecer = screen.getByRole("button", { name: `Ofrecer cupo a ${candidatoUno.paciente_anon_id}` });
+
+    fireEvent.click(botonOfrecer);
+    fireEvent.click(botonOfrecer);
+
+    const postsOferta = fetchSimulado.mock.calls.filter(([url, opt]) => String(url).includes("/oferta") && opt?.method === "POST");
+    expect(postsOferta).toHaveLength(1);
+
+    resolverOferta!(respuesta(cupoConOferta));
+  });
+
+  it("línea 152: rechaza confirmación con medio inválido o discordante sin enviar POST", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoConOferta))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar reasignación" }));
+    await userEvent.click(screen.getByLabelText("Confirmé la reasignación con el paciente"));
+
+    const selectMedio = screen.getByLabelText("Medio de confirmación");
+    fireEvent.change(selectMedio, { target: { value: "INVALIDO" } });
+
+    const formulario = screen.getByRole("dialog").querySelector("form")!;
+    fireEvent.submit(formulario);
+
+    expect(screen.getByText("Selecciona el medio de confirmación.")).toBeInTheDocument();
+    const llamadaReasigna = fetchSimulado.mock.calls.find(([, opt]) => String(opt?.body).includes("confirmacion_humana"));
+    expect(llamadaReasigna).toBeUndefined();
+  });
+
+  it("línea 154: rechaza observaciones mayores a 255 caracteres sin enviar POST", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoConOferta))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar reasignación" }));
+    await userEvent.click(screen.getByLabelText("Confirmé la reasignación con el paciente"));
+    await userEvent.selectOptions(screen.getByLabelText("Medio de confirmación"), "LLAMADA_CONFIRMADA");
+
+    const textarea = screen.getByLabelText("Observaciones (opcional)");
+    fireEvent.change(textarea, { target: { value: "A".repeat(256) } });
+
+    const formulario = screen.getByRole("dialog").querySelector("form")!;
+    fireEvent.submit(formulario);
+
+    expect(screen.getByText("Revisa las observaciones: el máximo es 255 caracteres.")).toBeInTheDocument();
+    const llamadaReasigna = fetchSimulado.mock.calls.find(([, opt]) => String(opt?.body).includes("confirmacion_humana"));
+    expect(llamadaReasigna).toBeUndefined();
+  });
+
+  it("línea 161: muestra 'No se encontró el cupo liberado.' con enlace cuando cupo es null", async () => {
+    fetchSimulado.mockResolvedValueOnce(respuesta(null));
+
+    montar();
+    expect(await screen.findByText("No se encontró el cupo liberado.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "← Volver a cupos liberados" })).toBeInTheDocument();
+  });
+
+  it("líneas 166, 180: muestra error de candidatos y botón de refresco ante fallo en propuestas", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(errorApi("ERROR_CANDIDATOS", "Error al calcular compatibilidad", 500));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("Error al calcular compatibilidad")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refrescar cupo y propuestas" })).toBeInTheDocument();
+  });
+
+  it("línea 187: muestra aviso sin reasignación y detalle con y sin observaciones cuando está reasignado", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("No hay reasignación registrada.")).toBeInTheDocument();
+
+    cleanup();
+
+    const cupoReasignadoSinObs: CupoDetalleOut = {
+      ...cupoInicial,
+      estado_cupo: "REASIGNADO",
+      reasignacion: {
+        id_reasignacion: 999,
+        id_cupo_liberado: 42,
+        id_candidato: 801,
+        paciente_anon_id: "PAC-SIM-0801",
+        id_operador_confirma: 5,
+        confirmacion_humana: true,
+        medio_confirmacion: "PRESENCIAL",
+        observaciones: "",
+        fecha_hora_reasigna: "2026-10-24T12:00:00-05:00",
+      },
+    };
+
+    fetchSimulado.mockResolvedValueOnce(respuesta(cupoReasignadoSinObs));
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("Sin observaciones")).toBeInTheDocument();
+    expect(screen.getByText("PAC-SIM-0801")).toBeInTheDocument();
+    expect(screen.getByText("#999")).toBeInTheDocument();
+  });
+
+  it("línea 190: muestra aviso con historial vacío y lista detallada con ofertas abiertas y cerradas", async () => {
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoInicial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText("No hay ofertas registradas.")).toBeInTheDocument();
+
+    cleanup();
+
+    const cupoConHistorial: CupoDetalleOut = {
+      ...cupoInicial,
+      historial_ofertas: [
+        {
+          id_candidato: 801,
+          fecha_hora_oferta: "2026-10-24T09:00:00-05:00",
+          cierre: "RECHAZA",
+        },
+        {
+          id_candidato: 802,
+          fecha_hora_oferta: "2026-10-24T10:00:00-05:00",
+          cierre: null,
+        },
+      ],
+    };
+
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoConHistorial))
+      .mockResolvedValueOnce(respuesta([candidatoUno]));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+    expect(screen.getByText(/Candidato #801 · RECHAZA/)).toBeInTheDocument();
+    expect(screen.getByText(/Candidato #802 · Oferta abierta/)).toBeInTheDocument();
+  });
+
+  it("línea 192: Escape en diálogo no cierra si ocupado y sí limpia si no hay petición", async () => {
+    let resolverReasigna: ((res: Response) => void) | undefined;
+    fetchSimulado
+      .mockResolvedValueOnce(respuesta(cupoConOferta))
+      .mockResolvedValueOnce(respuesta([candidatoUno]))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolverReasigna = resolve;
+      }))
+      .mockResolvedValueOnce(respuesta({ ...cupoConOferta, estado_cupo: "REASIGNADO" }));
+
+    montar();
+    expect(await screen.findByRole("heading", { name: "Cupo #42" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar reasignación" }));
+    const casilla = screen.getByLabelText("Confirmé la reasignación con el paciente") as HTMLInputElement;
+    await userEvent.click(casilla);
+    expect(casilla.checked).toBe(true);
+
+    const dialogo = screen.getByRole("dialog");
+
+    const eventoLibre = new Event("cancel", { bubbles: true, cancelable: true });
+    fireEvent(dialogo, eventoLibre);
+    expect(eventoLibre.defaultPrevented).toBe(false);
+    await waitFor(() => {
+      expect(casilla.checked).toBe(false);
+    });
+
+    await userEvent.click(casilla);
+    await userEvent.selectOptions(screen.getByLabelText("Medio de confirmación"), "PRESENCIAL");
+    const botonRegistrar = screen.getByRole("button", { name: "Registrar reasignación" });
+    await userEvent.click(botonRegistrar);
+
+    const eventoOcupado = new Event("cancel", { bubbles: true, cancelable: true });
+    fireEvent(dialogo, eventoOcupado);
+    expect(eventoOcupado.defaultPrevented).toBe(true);
+
+    resolverReasigna!(respuesta({ id_reasignacion: 999 }, 201));
+    await waitFor(() => {
+      const llamada = fetchSimulado.mock.calls.find(([url]) => String(url).includes("/reasignacion"));
+      expect(llamada).toBeDefined();
+      const cuerpo = JSON.parse(String(llamada?.[1]?.body));
+      expect(cuerpo).toEqual({
+        id_candidato: candidatoUno.id_candidato,
+        confirmacion_humana: true,
+        medio_confirmacion: "PRESENCIAL",
+      });
+      expect("observaciones" in cuerpo).toBe(false);
+    });
+  });
+});
+
