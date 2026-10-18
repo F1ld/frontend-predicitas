@@ -8,6 +8,7 @@ import { ContextoSesion } from "../../nucleo/auth/contexto";
 import type { ContextoAuth } from "../../nucleo/auth/contexto";
 import Login from "./Login";
 import rutas from "./rutas";
+import * as motivos from "../../nucleo/sesion";
 
 function sesion(cambios: Partial<ContextoAuth> = {}): ContextoAuth {
   return {
@@ -31,6 +32,14 @@ async function completarFormulario() {
 
 // RF-001, RNF-016: credenciales sintéticas y todos los estados del acceso migrado M01-V01.
 describe("Login", () => {
+  it("muestra el motivo exacto de inactividad y lo limpia al volver a ingresar (RNF-004, CP-M01-11)", async () => {
+    vi.spyOn(motivos, "leerMotivoSesion").mockReturnValue("Tu sesión expiró por inactividad");
+    const limpiar = vi.spyOn(motivos, "limpiarMotivoSesion");
+    mostrar(sesion({ mensajeSesion: "Tu sesión expiró. Inicia sesión nuevamente." }));
+    expect(screen.getByRole("status")).toHaveTextContent("Tu sesión expiró por inactividad");
+    await completarFormulario();
+    expect(limpiar).toHaveBeenCalledOnce();
+  });
   it("conserva los campos accesibles, la marca y la ranura pública de acceso", () => {
     mostrar();
     expect(screen.getByRole("heading", { name: "Iniciar sesión" })).toBeInTheDocument();

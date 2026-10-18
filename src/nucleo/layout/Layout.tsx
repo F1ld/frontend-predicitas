@@ -5,6 +5,7 @@ import { etiqueta } from "../formato/formato";
 import Marca from "../componentes/Marca";
 import Icono from "../componentes/Icono";
 import { menuPorRol, type ModuloMenu } from "./ranuras";
+import GestorSesion from "../sesion/GestorSesion";
 
 const modulosMenu = import.meta.glob<ModuloMenu>("../../modulos/*/menu.ts", { eager: true });
 
@@ -22,6 +23,7 @@ export default function Layout() {
     try { await cerrarSesion(); } finally { setSaliendo(false); }
   }
   return <div className="app-shell">
+    <GestorSesion />
     <a className="saltar-contenido" href="#contenido">Ir al contenido</a>
     <div className="franja-institucional"><div className="ancho-app"><span>Clínica Ricardo Palma</span><span>San Isidro · Entorno de demostración</span></div></div>
     <header className="cabecera-app">

@@ -7,12 +7,14 @@ import Cargando from "../../nucleo/componentes/Cargando";
 import Mensaje from "../../nucleo/componentes/Mensaje";
 import Marca from "../../nucleo/componentes/Marca";
 import Icono from "../../nucleo/componentes/Icono";
+import { leerMotivoSesion, limpiarMotivoSesion } from "../../nucleo/sesion";
 
 /** RF-001, RNF-016: inicio de sesión actual, accesible y con errores 401/429 del contrato M01. */
 export default function Login() {
   const { usuario, cargando, mensajeSesion, iniciarSesion } = useAuth();
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [motivoSesion, setMotivoSesion] = useState(leerMotivoSesion);
   if (cargando) return <Cargando texto="Verificando sesión…" />;
   if (usuario) return <Navigate to="/citas" replace />;
   async function ingresar(evento: FormEvent<HTMLFormElement>) {
@@ -22,6 +24,7 @@ export default function Login() {
     const correo = campos.get("correo");
     const clave = campos.get("clave");
     if (typeof correo !== "string" || typeof clave !== "string") return;
+    limpiarMotivoSesion(); setMotivoSesion("");
     setEnviando(true);
     setError("");
     try { await iniciarSesion(correo, clave); }
@@ -45,7 +48,7 @@ export default function Login() {
       <section className="login-formulario">
         <div className="login-titulo"><span className="sobretitulo">ACCESO DEL EQUIPO</span><h1>Iniciar sesión</h1>
           <p>Bienvenido. Ingresa con tu correo institucional para continuar.</p></div>
-        {mensajeSesion && <Mensaje tipo="info">{mensajeSesion}</Mensaje>}
+        {(motivoSesion || mensajeSesion) && <Mensaje tipo="info">{motivoSesion || mensajeSesion}</Mensaje>}
         {error && <Mensaje>{error}</Mensaje>}
         <form onSubmit={(evento) => { void ingresar(evento); }} className="login-form">
           <fieldset disabled={enviando} className="space-y-5">
