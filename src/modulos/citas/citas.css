@@ -1,0 +1,29 @@
+/* RF-015, RF-018, RNF-016: extensiones locales del diseño institucional T-012. */
+.citas-acciones, .citas-enlaces { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.citas-ayuda { color: var(--texto-suave); font-size: .8125rem; line-height: 1.6; margin-top: 6px; }
+.citas-panel { min-width: 0; overflow-wrap: anywhere; }
+.citas-panel dl, .citas-panel ul { min-width: 0; }
+.citas-panel pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: .8125rem; }
+.citas-panel + .citas-panel { margin-top: 24px; }
+.citas-casilla { display: flex; gap: 10px; align-items: flex-start; }
+.citas-casilla input[type="checkbox"] { width: 20px; height: 20px; min-height: 20px; margin-top: 2px; flex-shrink: 0; }
+.citas-casilla label { margin: 0; }
+.dialogo-cambio { max-height: calc(100dvh - 32px); overflow-y: auto; width: min(460px, calc(100% - 32px)); }
+.citas-panel :is(dd, p, li), .datos-cita dd { overflow-wrap: anywhere; }
+.citas-tabla { overflow-x: auto; }
+.citas-tabla table { min-width: 660px; }
+.citas-lista-detalle { list-style: none; padding: 0; display: grid; gap: 16px; }
+.citas-lista-detalle > li { min-width: 0; padding: 18px; border: 1px solid var(--borde); border-radius: 8px; overflow-wrap: anywhere; }
+.citas-prediccion { display: grid; gap: 14px; }
+.citas-seccion-vacia { color: var(--texto-suave); font-size: .875rem; line-height: 1.6; margin-top: 16px; }
+.citas-check-control { display: flex; align-items: flex-start; gap: 10px; }
+.citas-check-control input[type="checkbox"] { width: 20px; height: 20px; min-height: 20px; flex-shrink: 0; }
+.citas-check-control label { margin: 0; }
+.citas-vinculos { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.citas-instantanea { margin-top: 12px; font-size: .8125rem; }
+.citas-instantanea summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: #246466; text-decoration: underline; }
+.citas-instantanea pre { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; padding: 12px; background: #f4f8f8; border-radius: 7px; }
+@media (max-width: 760px) {
+  .citas-acciones > :is(a, button) { width: 100%; justify-content: center; }
+  .citas-panel .datos-cita { grid-template-columns: minmax(0, 1fr); }
+}

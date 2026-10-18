@@ -4,13 +4,40 @@ import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import { ContextoSesion, type ContextoAuth } from "./nucleo/auth/contexto";
-import type { Rol, Usuario } from "./nucleo/api/tipos";
+import type { Pagina, Rol, Usuario } from "./nucleo/api/tipos";
 import { inicioPorRol, menuPorRol, type ModuloMenu } from "./nucleo/layout/ranuras";
+import type { CatalogosOut, CitaDetalleOut, CitaResumenOut } from "./modulos/citas/tipos";
 
-function mostrar(ruta: string, rol: Rol = "ADMINISTRADOR", autenticado = true, datos: unknown = { total: 0, limite: 50, desplazamiento: 0, items: [] }) {
+// RF-015, RF-018, RF-104 y RNF-007: fixtures sintéticos completos M02 para
+// verificar las ranuras sin sustituir respuestas distintas por una misma forma.
+const catalogosCitas: CatalogosOut = {
+  especialidades: ["CARDIOLOGIA", "TRAUMATOLOGIA", "PEDIATRIA"],
+  estados: ["RECIBIDA", "CONFIRMADA", "REPROGRAMADA", "CANCELADA", "LIBERADA", "ATENDIDA", "NO_SHOW"],
+  niveles_riesgo: ["BAJO", "MEDIO", "ALTO"], medicos: ["Profesional sintético 1"],
+  canales_origen: ["WEB", "CALL_CENTER", "PRESENCIAL"], tipos_paciente: ["NUEVO", "CONTINUADOR"],
+};
+const paginaCitas: Pagina<CitaResumenOut> = { total: 0, limite: 50, desplazamiento: 0, items: [] };
+const detalleCita: CitaDetalleOut = {
+  id_cita: 324, id_cita_externa: "CIT-SIM-000324", paciente_anon_id: "PAC-SIM-0007",
+  sede: "SAN_ISIDRO", especialidad: "CARDIOLOGIA", medico: "Profesional sintético 1",
+  fecha_hora_cita: "2026-10-20T09:00:00-05:00", fecha_registro_cita: "2026-10-01T10:00:00-05:00",
+  antelacion_dias: 19, tipo_paciente: "CONTINUADOR", canal_origen: "WEB", franja_horaria: "MANANA",
+  dia_semana: "MARTES", inasistencias_previas: 0, reprogramaciones_prev: 0, asistencias_previas: 1,
+  estado_actual: "RECIBIDA", target_no_show: null, historial: [], check_in: null,
+  predicciones: [], intervenciones: [], cupo_liberado: null, reasignacion: null,
+};
+
+function mostrar(ruta: string, rol: Rol = "ADMINISTRADOR", autenticado = true, datos: CitaDetalleOut = detalleCita) {
   const usuario: Usuario = { id_usuario: 1, nombre_completo: "Usuario sintético", correo_institucional: "demo@predicitas.crp", rol, activo: true, creado_en: "2026-10-18T10:00:00-05:00", actualizado_en: null };
   const contexto: ContextoAuth = { usuario: autenticado ? usuario : null, cargando: false, mensajeSesion: "", iniciarSesion: vi.fn(), cerrarSesion: vi.fn(), tieneRol: (...roles) => autenticado && roles.includes(rol) };
-  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(JSON.stringify(datos), { status: 200 })));
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (entrada: RequestInfo | URL) => {
+    const url = new URL(entrada instanceof Request ? entrada.url : String(entrada));
+    const respuesta = url.pathname === "/citas/catalogos" ? catalogosCitas
+      : url.pathname === "/citas" ? { ...paginaCitas, limite: Number(url.searchParams.get("limite") ?? 50), desplazamiento: Number(url.searchParams.get("desplazamiento") ?? 0) }
+        : /^\/citas\/\d+$/.test(url.pathname) ? datos : undefined;
+    if (respuesta === undefined) throw new Error(`No hay respuesta simulada para ${url.pathname}.`);
+    return new Response(JSON.stringify(respuesta), { status: 200 });
+  }));
   return { ...render(<ContextoSesion.Provider value={contexto}><MemoryRouter initialEntries={[ruta]}><App /></MemoryRouter></ContextoSesion.Provider>), contexto };
 }
 
@@ -42,7 +69,7 @@ describe("router y menú por ranuras", () => {
     expect(screen.getByRole("link", { name: "Citas" })).not.toHaveAttribute("aria-current");
   });
   it("conserva Citas activo al consultar un detalle", async () => {
-    mostrar("/citas/324", "ADMINISTRADOR", true, { id_cita: 324, id_cita_externa: "CIT-SIM-000324", estado_actual: "RECIBIDA", historial: [], target_no_show: null });
+    mostrar("/citas/324", "ADMINISTRADOR", true, detalleCita);
     expect(await screen.findByRole("heading", { name: "Cita CIT-SIM-000324" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Citas" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Importar CSV" })).not.toHaveAttribute("aria-current");
