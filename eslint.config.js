@@ -26,7 +26,7 @@ const tipos = {
   },
 };
 export default defineConfig([
-  globalIgnores(["dist/**", "coverage/**", "tests/**", "verificacion/**"]),
+  globalIgnores(["dist/**", "coverage/**", "tests/**"]),
   {
     files: ["**/*.{js,jsx,mjs}"],
     extends: [js.configs.recommended, reactHooks.configs.flat.recommended, reactRefresh.configs.vite],

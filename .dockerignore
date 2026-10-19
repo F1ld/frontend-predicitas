@@ -2,7 +2,6 @@ node_modules
 dist
 coverage
 tests
-verificacion
 *.log
 .env
 .env.local
