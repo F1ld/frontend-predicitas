@@ -21,8 +21,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); sessionStorage.cl
 describe("Descargas auditadas REP-02", () => {
   it.each(["csv", "xlsx"] as const)("descarga %s desde el endpoint con formato, filtros y Bearer", async (formato) => {
     token.guardar("credencial-sintetica");
-    const datos = new Blob(["id_intervencion\n9"], { type: "text/csv" });
-    fetchSimulado.mockResolvedValue(new Response(datos, { headers: { "Content-Disposition": `attachment; filename="rep-02_2026-10-18.${formato}"` } }));
+    fetchSimulado.mockResolvedValue(new Response("id_intervencion\n9", { headers: { "Content-Disposition": `attachment; filename="rep-02_2026-10-18.${formato}"`, "Content-Type": "text/csv" } }));
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
       expect(this.download).toBe(`rep-02_2026-10-18.${formato}`);
       expect(this.href).toBe("blob:rep-02-sintetico");
