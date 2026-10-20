@@ -1,6 +1,7 @@
 r"""QA local y reversible del frontend, separado del servidor normal.
 
-Desde backend: .\.venv\Scripts\python.exe ..\Frontend\tests\validar_diseno.py
+Desde la raíz: python frontend\tests\validar_diseno.py
+O desde backend: python ..\frontend\tests\validar_diseno.py
 Expone la API en 8001 para pruebas de navegador. Todas las escrituras quedan
 dentro de una transacción externa con rollback. No elimina archivos existentes.
 Los endpoints /__qa solo existen en este proceso de prueba, nunca en producción.
