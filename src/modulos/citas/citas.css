@@ -241,3 +241,45 @@
   .trazabilidad-timeline { margin-left: 8px; padding-left: 16px; }
   .timeline-marcador { left: -24px; }
 }
+
+/* Zona de Drag & Drop para Importar Citas */
+.selector-archivo-dropzone {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 12px;
+}
+
+.selector-archivo-dropzone:hover {
+  border-color: #0d9488;
+  background-color: #f0fdfa;
+}
+
+.selector-archivo-dropzone.arrastrando {
+  border-color: #0f766e !important;
+  border-style: solid !important;
+  background-color: #ccfbf1 !important;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.2) !important;
+  transform: scale(1.01);
+}
+
+.archivo-seleccionado-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 460px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #5eead4;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
