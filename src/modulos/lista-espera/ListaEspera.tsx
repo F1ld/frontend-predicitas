@@ -175,17 +175,21 @@ function ListaEsperaContenido() {
         <div className="m06-acciones"><button className="boton" type="submit">Aplicar filtros</button><button className="boton-secundario" type="button" onClick={(evento) => { evento.currentTarget.form?.reset(); setBusqueda({}); }}>Limpiar filtros</button></div>
       </fieldset>
     </form>
-    {cargando ? <Cargando texto="Cargando lista de espera…" /> : error ? <div className="space-y-3"><Mensaje>{error}</Mensaje><button className="boton-secundario" onClick={reintentar}>Reintentar lista</button></div> : datos && <>
-      <div className="resultados-cabecera"><h2>Candidatos <span className="contador-citas">{datos.total}</span></h2><p>Se conserva el orden enviado por el sistema.</p></div>
+    {cargando ? <Cargando texto="Cargando lista de espera…" /> : error ? <div className="space-y-3"><Mensaje>{error}</Mensaje><button className="boton-secundario" onClick={reintentar}>Reintentar lista</button></div> : (() => {
+      const listaCandidatos = Array.isArray(datos) ? datos : (datos?.items ?? []);
+      const totalCandidatos = typeof datos?.total === "number" ? datos.total : listaCandidatos.length;
+      return <>
+      <div className="resultados-cabecera"><h2>Candidatos <span className="contador-citas">{totalCandidatos}</span></h2><p>Se conserva el orden enviado por el sistema.</p></div>
       <div className="tabla-contenedor" role="region" aria-label="Candidatos de la lista de espera" tabIndex={0}>
         <table className="tabla-citas w-full"><caption className="sr-only">Candidatos ordenados por especialidad, inscripción y fecha de registro</caption><thead><tr><th scope="col">Paciente</th><th scope="col">Especialidad</th><th scope="col">Franja preferida</th><th scope="col">Estado</th><th scope="col">Orden de inscripción</th><th scope="col">Fecha de registro</th><th scope="col">Acciones</th></tr></thead>
-          <tbody>{datos.items.length === 0 ? <tr><td colSpan={7}><div className="estado-vacio"><p>No hay candidatos con estos filtros.</p><span>Amplía la búsqueda o registra un candidato.</span></div></td></tr> : datos.items.map((candidato) => <tr key={candidato.id_candidato}>
+          <tbody>{listaCandidatos.length === 0 ? <tr><td colSpan={7}><div className="estado-vacio"><p>No hay candidatos con estos filtros.</p><span>Amplía la búsqueda o registra un candidato.</span></div></td></tr> : listaCandidatos.map((candidato) => <tr key={candidato.id_candidato}>
             <th scope="row">{candidato.paciente_anon_id}</th><td>{etiqueta(candidato.especialidad_req)}</td><td>{nombreFranja(candidato.franja_preferida)}</td><td><span className="m06-estado">{ESTADOS[candidato.estado_candidato]}</span></td><td>{candidato.prioridad_registro}</td><td>{formatearFechaHora(candidato.fecha_registro)}</td>
             <td>{candidato.estado_candidato === "ASIGNADO" || candidato.estado_candidato === "DESISTIDO" ? "Sin acciones disponibles" : <div className="m06-acciones"><button className="boton-secundario" disabled={!!operacion} onClick={(evento) => { origenEdicion.current = evento.currentTarget; setSeleccionado(candidato); setErrorCambio(""); setCamposCambio({}); }}>Cambiar franja{" "}<span className="sr-only">de {candidato.paciente_anon_id}</span></button><button className="boton-secundario" disabled={!!operacion} onClick={() => { void cambiar(candidato, { estado_candidato: "DESISTIDO" }, "desistir"); }}>Marcar desistido{" "}<span className="sr-only">a {candidato.paciente_anon_id}</span></button></div>}</td>
           </tr>)}</tbody>
         </table>
       </div>
-      <div className="paginacion"><p>Página {Math.floor(desplazamiento / limite) + 1} de {Math.max(1, Math.ceil(datos.total / limite))}</p><div className="m06-acciones"><button className="boton-secundario" disabled={desplazamiento === 0 || !!operacion} onClick={() => paginar(Math.max(0, desplazamiento - limite))}>Anterior</button><button className="boton-secundario" disabled={desplazamiento + limite >= datos.total || !!operacion} onClick={() => paginar(desplazamiento + limite)}>Siguiente</button></div></div>
-    </>}
+      <div className="paginacion"><p>Página {Math.floor(desplazamiento / limite) + 1} de {Math.max(1, Math.ceil(totalCandidatos / limite))}</p><div className="m06-acciones"><button className="boton-secundario" disabled={desplazamiento === 0 || !!operacion} onClick={() => paginar(Math.max(0, desplazamiento - limite))}>Anterior</button><button className="boton-secundario" disabled={desplazamiento + limite >= totalCandidatos || !!operacion} onClick={() => paginar(desplazamiento + limite)}>Siguiente</button></div></div>
+    </>;
+    })()}
   </div>;
 }
