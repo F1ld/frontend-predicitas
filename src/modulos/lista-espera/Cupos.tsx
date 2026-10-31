@@ -66,12 +66,16 @@ function ListadoCupos() {
       </fieldset>
     </form>
     {errorFiltros && <Mensaje>{errorFiltros}</Mensaje>}
-    {cargando ? <Cargando texto="Cargando cupos…" /> : error ? <div className="space-y-3"><Mensaje>{error}</Mensaje><button type="button" className="boton-secundario" onClick={reintentar}>Reintentar</button></div> : datos && <>
-      <div className="resultados-cabecera"><h2>Cupos encontrados <span className="contador-citas">{datos.total}</span></h2><p>Abre un cupo para consultar sus candidatos y ofertas.</p></div>
-      {datos.items.length === 0 ? <div className="tarjeta estado-vacio"><Icono nombre="calendario" /><p>No hay cupos con esos filtros.</p><span>Amplía las fechas o utiliza «Limpiar».</span></div> : <div className="tabla-contenedor" role="region" aria-label="Cupos encontrados" tabIndex={0}><table><caption className="sr-only">Cupos liberados ordenados por su fecha y hora</caption><thead><tr>{["Cupo", "Fecha y hora", "Especialidad", "Médico", "Franja", "Estado", "Cita de origen", "Acción"].map(nombre => <th scope="col" key={nombre}>{nombre}</th>)}</tr></thead><tbody>{datos.items.map(cupo => <tr key={cupo.id_cupo_liberado}>
+    {cargando ? <Cargando texto="Cargando cupos…" /> : error ? <div className="space-y-3"><Mensaje>{error}</Mensaje><button type="button" className="boton-secundario" onClick={reintentar}>Reintentar</button></div> : (() => {
+      const listaCupos = Array.isArray(datos) ? datos : (datos?.items ?? []);
+      const totalCupos = typeof datos?.total === "number" ? datos.total : listaCupos.length;
+      return <>
+      <div className="resultados-cabecera"><h2>Cupos encontrados <span className="contador-citas">{totalCupos}</span></h2><p>Abre un cupo para consultar sus candidatos y ofertas.</p></div>
+      {listaCupos.length === 0 ? <div className="tarjeta estado-vacio"><Icono nombre="calendario" /><p>No hay cupos con esos filtros.</p><span>Amplía las fechas o utiliza «Limpiar».</span></div> : <div className="tabla-contenedor" role="region" aria-label="Cupos encontrados" tabIndex={0}><table><caption className="sr-only">Cupos liberados ordenados por su fecha y hora</caption><thead><tr>{["Cupo", "Fecha y hora", "Especialidad", "Médico", "Franja", "Estado", "Cita de origen", "Acción"].map(nombre => <th scope="col" key={nombre}>{nombre}</th>)}</tr></thead><tbody>{listaCupos.map(cupo => <tr key={cupo.id_cupo_liberado}>
         <td>#{cupo.id_cupo_liberado}</td><td>{formatearFechaHora(cupo.fecha_hora_cupo)}</td><td>{etiqueta(cupo.especialidad)}</td><td>{cupo.medico}</td><td>{etiqueta(cupo.franja_horaria)}</td><td><span className="m06-estado">{ETIQUETAS_ESTADO[cupo.estado_cupo]}</span></td><td>{cupo.id_cita_externa_origen}</td><td><Link className="enlace-detalle" to={`/cupos/${cupo.id_cupo_liberado}`} state={{ volver }}>Ver cupo<Icono nombre="flecha" /></Link></td>
       </tr>)}</tbody></table></div>}
-      <div className="paginacion"><p>Página {Math.floor(desplazamiento / LIMITE) + 1} de {Math.max(1, Math.ceil(datos.total / LIMITE))}</p><div className="m06-acciones"><button type="button" className="boton-secundario" disabled={desplazamiento === 0} onClick={() => paginar(Math.max(0, desplazamiento - LIMITE))}>Anterior</button><button type="button" className="boton-secundario" disabled={desplazamiento + LIMITE >= datos.total} onClick={() => paginar(desplazamiento + LIMITE)}>Siguiente</button></div></div>
-    </>}
+      <div className="paginacion"><p>Página {Math.floor(desplazamiento / LIMITE) + 1} de {Math.max(1, Math.ceil(totalCupos / LIMITE))}</p><div className="m06-acciones"><button type="button" className="boton-secundario" disabled={desplazamiento === 0} onClick={() => paginar(Math.max(0, desplazamiento - LIMITE))}>Anterior</button><button type="button" className="boton-secundario" disabled={desplazamiento + LIMITE >= totalCupos} onClick={() => paginar(desplazamiento + LIMITE)}>Siguiente</button></div></div>
+    </>;
+    })()}
   </div>;
 }

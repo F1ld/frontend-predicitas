@@ -71,7 +71,9 @@ function Listado({ elegibles, intervenir }: { elegibles: boolean; intervenir: (c
   const parametros = new URLSearchParams({ limite: String(limite), desplazamiento: String(desplazamiento) });
   const campos = elegibles ? ["desde", "hasta", "especialidad", "nivel_riesgo"] : ["desde", "hasta", "estado_intervencion", "canal_contacto", "respuesta_paciente", "id_cita"];
   campos.forEach((campo) => { const valor = busqueda.get(campo); if (valor && (campo !== "id_cita" || idPositivo(valor))) parametros.set(campo, valor); });
-  const { datos, cargando, error, reintentar } = useConsulta<Pagina<ElegibleOut> | Pagina<IntervencionOut>>(`${elegibles ? "/intervenciones/elegibles" : "/intervenciones"}?${parametros}`);
+  const { datos, cargando, error, reintentar } = useConsulta<any>(`${elegibles ? "/intervenciones/elegibles" : "/intervenciones"}?${parametros}`);
+  const itemsLista = Array.isArray(datos) ? datos : (datos?.items ?? datos?.historial_intervenciones ?? datos?.citas_sugeridas ?? []);
+  const totalRegistros = typeof datos?.total === "number" ? datos.total : (typeof datos?.total_intervenciones === "number" ? datos.total_intervenciones : itemsLista.length);
   function aplicar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault(); const valores = new FormData(evento.currentTarget);
     const desde = String(valores.get("desde") ?? ""); const hasta = String(valores.get("hasta") ?? "");
@@ -101,10 +103,10 @@ function Listado({ elegibles, intervenir }: { elegibles: boolean; intervenir: (c
       {elegibles && <p className="m05-ayuda mt-3">Sin fechas se consultan hoy y los próximos siete días, según la API. La elegibilidad y el orden por riesgo los determina el servidor.</p>}
     </form>
     {cargando ? <Cargando texto={elegibles ? "Cargando citas elegibles…" : "Cargando intervenciones…"} /> : error || !datos ? <><Mensaje>{error || "El servidor no devolvió la lista solicitada."}</Mensaje><button className="boton-secundario mt-3" onClick={reintentar}>Reintentar</button></>
-      : <div className="m05-contenido"><div className="resultados-cabecera"><h2>{elegibles ? "Citas elegibles" : "Intervenciones encontradas"} <span className="contador-citas">{datos.total}</span></h2></div>
-        {!datos.items.length ? <div className="tarjeta estado-vacio"><p>{elegibles ? "No hay citas elegibles con esos filtros." : "No hay intervenciones registradas con esos filtros."}</p><span>Prueba otras fechas o utiliza «Limpiar».</span></div>
-          : elegibles ? <Elegibles items={datos.items as ElegibleOut[]} intervenir={intervenir} /> : <Registradas items={datos.items as IntervencionOut[]} />}
-        <div className="paginacion"><p>Página {Math.floor(desplazamiento / limite) + 1} de {Math.max(1, Math.ceil(datos.total / limite))} · {datos.total} registros</p><div className="m05-acciones"><button className="boton-secundario" disabled={desplazamiento === 0} onClick={() => pagina(Math.max(0, desplazamiento - limite))}>Anterior</button><button className="boton-secundario" disabled={desplazamiento + limite >= datos.total} onClick={() => pagina(desplazamiento + limite)}>Siguiente</button></div></div>
+      : <div className="m05-contenido"><div className="resultados-cabecera"><h2>{elegibles ? "Citas elegibles" : "Intervenciones encontradas"} <span className="contador-citas">{totalRegistros}</span></h2></div>
+        {!itemsLista.length ? <div className="tarjeta estado-vacio"><p>{elegibles ? "No hay citas elegibles con esos filtros." : "No hay intervenciones registradas con esos filtros."}</p><span>Prueba otras fechas o utiliza «Limpiar».</span></div>
+          : elegibles ? <Elegibles items={itemsLista as ElegibleOut[]} intervenir={intervenir} /> : <Registradas items={itemsLista as IntervencionOut[]} />}
+        <div className="paginacion"><p>Página {Math.floor(desplazamiento / limite) + 1} de {Math.max(1, Math.ceil(totalRegistros / limite))} · {totalRegistros} registros</p><div className="m05-acciones"><button className="boton-secundario" disabled={desplazamiento === 0} onClick={() => pagina(Math.max(0, desplazamiento - limite))}>Anterior</button><button className="boton-secundario" disabled={desplazamiento + limite >= totalRegistros} onClick={() => pagina(desplazamiento + limite)}>Siguiente</button></div></div>
       </div>}
   </>;
 }
